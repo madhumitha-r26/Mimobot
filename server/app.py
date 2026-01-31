@@ -1,61 +1,80 @@
 import os
+from flask import Flask, request, Response, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 from google import genai
 from datetime import datetime
+from collections import defaultdict
 
 load_dotenv()
 
-def generate():
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+app = Flask(__name__)
+CORS(app)
 
-    SYSTEM_PROMPT = (
-        "You are a knowledgeable chatbot named MIMOBOT. "
-        "Answer user questions fully and clearly. "
-        "Give detailed explanations for why and how questions. "
-        "Give short answers only for simple factual questions. "
-        "Use examples if they help understanding. "
-        "If a question is unclear, ask for clarification. "
-        "Only say 'I don't know what you are asking for' "
-        "if the question is completely unrelated or meaningless. "
-        "If asked for your name, reply with 'MIMOBOT'."
-    )
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-    chat = client.chats.create(
-        model="gemini-3-flash-preview",   
-        config={
-            "temperature": 0.6,
-            "max_output_tokens": 1000,
-            "top_p": 0.95,
-            "system_instruction": SYSTEM_PROMPT
-        }
-    )
+# In-memory chat history
+chat_histories = defaultdict(list)
+today = datetime.now().strftime("%A, %B %d, %Y")
 
-    print("\t--- MIMOBOT --- \t")
-    print("Type 'exit' or 'quit' to end the conversation.")
-    print("🤖: Hello, How can I help you?\n")
+SYSTEM_PROMPT = (
+    "You are MIMOBOT, an AI assistant. "
+    "Answer concisely and clearly. "
+    "Expand only if the user explicitly asks for details."
+    "Always complete your thoughts before ending a response. "
+    "If asked for your name, reply with 'My name is MIMOBOT'."
+    f"If today's date asked, reply with 'Today's date is {today}'."
+    "Never cut off responses"
+)
 
-    while True:
-        user_input = input("You: ").strip()
+@app.route("/chat-stream", methods=["POST"])
+def chat_stream():
+    data = request.get_json()
+    user_message = data.get("message", "").strip()
+    session_id = data.get("session_id", "default")
 
-        if not user_input:
-            print("🤖: Please ask something.\n")
-            continue
+    if not user_message:
+        return jsonify({"error": "Empty message"}), 400
 
-        if user_input.lower() in ["exit", "quit"]:
-            print("🤖: Goodbye 👋")
-            break
+    def generate():
+        try:
+            # Build conversation context
+            history = chat_histories[session_id]
 
-        if "today" in user_input.lower() and "date" in user_input.lower():
-            today = datetime.now().strftime("%A, %B %d, %Y")
-            print(f"🤖: Today is {today}\n")
-            continue
+            prompt = SYSTEM_PROMPT + "\n\n"
 
-        response = chat.send_message(user_input)
+            for turn in history:
+                prompt += f"User: {turn['user']}\n"
+                prompt += f"Assistant: {turn['bot']}\n"
 
-        if not response.text or response.text.strip() == "":
-            print("🤖: I don't know what you are asking for\n")
-        else:
-            print(f"🤖: {response.text}\n")
+            prompt += f"User: {user_message}\nAssistant:"
+
+            stream = client.models.generate_content_stream(
+                model="gemini-3-flash-preview",
+                contents=prompt,
+                config={
+                    "temperature": 0.4,
+                    "max_output_tokens": 500,
+                }
+            )
+
+            full_response = ""
+
+            for chunk in stream:
+                if chunk.text:
+                    full_response += chunk.text
+                    yield chunk.text
+
+            # Save conversation
+            history.append({
+                "user": user_message,
+                "bot": full_response.strip()
+            })
+
+        except Exception as e:
+            yield "\n\n[Error generating response]"
+
+    return Response(generate(), mimetype="text/plain")
 
 if __name__ == "__main__":
-    generate()
+    app.run(debug=True)

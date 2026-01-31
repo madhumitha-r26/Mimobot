@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import Dashboard from './Components/Dashboard'
+import ChatBox from './Components/ChatBox'
 import Navbar from './Components/Navbar'  
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
   return (
     <>
     <Navbar/>
-    <Dashboard/>
+    <ChatBox/>
     </>
   )
 }
