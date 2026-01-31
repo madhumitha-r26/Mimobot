@@ -128,7 +128,7 @@ npm run dev
 │   │   └── App.jsx         # Main app
 │   └── package.json        # npm dependencies
 │
-└── README.md              # This file
+└── README.md              
 ```
 
 ## Configuration
