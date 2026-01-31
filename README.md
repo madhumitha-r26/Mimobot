@@ -249,9 +249,6 @@ google-genai
 - The bot identifies itself as "MIMOBOT"
 - Backend must be running before starting the frontend
 
-## License
-
-MIT
 
 ## Support
 
