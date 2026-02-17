@@ -27,6 +27,10 @@ SYSTEM_PROMPT = (
     "Never cut off responses"
 )
 
+@app.route('/')
+def index():
+    return "I AM MIMOBOT"
+
 @app.route("/chat-stream", methods=["POST"])
 def chat_stream():
     data = request.get_json()
