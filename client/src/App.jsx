@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import ChatBox from './Components/ChatBox.jsx'
+import Chatbox from './Components/Chatbox.jsx'
 import Navbar from './Components/Navbar.jsx'  
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
   return (
     <>
     <Navbar/>
-    <ChatBox/>
+    <Chatbox/>
     </>
   )
 }
