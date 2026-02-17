@@ -1,4 +1,4 @@
-import mimobot from "../Assets/mimobot_icon.png";
+import mimobot from "../assets/mimobot_icon.png";
 
 
 function Navbar() {
