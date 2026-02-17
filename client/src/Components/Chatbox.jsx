@@ -20,7 +20,7 @@ function ChatBox() {
       { role: "bot", text: "" } // placeholder for streaming
     ]);
 
-    const response = await fetch("http://localhost:5000/chat-stream", {
+    const response = await fetch("https://mimobot.vercel.app/chat-stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: userMessage }),
