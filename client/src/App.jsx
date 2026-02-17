@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
-import ChatBox from './Components/ChatBox'
-import Navbar from './Components/Navbar'  
+import ChatBox from './Components/ChatBox.jsx'
+import Navbar from './Components/Navbar.jsx'  
 
 function App() {
 
