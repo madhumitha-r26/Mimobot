@@ -1,23 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SendIcon from "@mui/icons-material/Send";
+import mimobot from "../assets/mimobot_icon.png"
 
 function ChatBox() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
 
     const userMessage = message;
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
     setMessage("");
     setLoading(true);
 
     // 1️⃣ Show user message immediately
     setMessages((prev) => [
       ...prev,
-      { role: "user", text: userMessage },
-      { role: "bot", text: "" } // placeholder for streaming
+      { role: "user", text: userMessage, time: timestamp },
+      { role: "bot", text: "", time: timestamp } // placeholder for streaming
     ]);
 
     const response = await fetch("https://mimobot.vercel.app/chat-stream", {
@@ -42,7 +53,7 @@ function ChatBox() {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
-          role: "bot",
+          ...updated[updated.length - 1],
           text: botText,
         };
         return updated;
@@ -53,62 +64,84 @@ function ChatBox() {
   };
 
   return (
-    <div className="h-full overflow-hidden">
-      <div className="flex items-center justify-center h-full">
-        <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 p-4">
-
-          {/* INTRO */}
-          <div className="flex">
-            <p className="text-5xl py-2">🤖</p>
-            <div className="p-4 bg-base-200 rounded-lg text-lg">
-              I am Mimobot. How can I help you?
+    <div className="h-full flex flex-col max-w-2xl mx-auto p-4">
+      {/* CHAT CONTAINER */}
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto mb-4 space-y-4 scrollbar-thin"
+      >
+        {/* INTRO MESSAGE */}
+        <div className="chat chat-start">
+          <div className="chat-image avatar">
+            <div className="w-20 rounded-full flex items-center justify-center">
+              <img src={mimobot} alt="Mimobot" />
             </div>
           </div>
-
-          {/* CHAT MESSAGES */}
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {msg.role === "bot" && <p className="text-5xl py-2">🤖</p>}
-              <div
-                className={`p-4 rounded-lg text-lg whitespace-pre-wrap ${
-                  msg.role === "user"
-                    ? "bg-cyan-600 text-white"
-                    : "bg-base-200"
-                }`}
-              >
-                {msg.text}
-              </div>
-            </div>
-          ))}
-
-          {/* TYPING */}
-          {loading && (
-            <div className="text-sm opacity-60">MIMOBOT is typing...</div>
-          )}
-
-          {/* INPUT */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Type to chat"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="input input-bordered text-xl p-6 w-full h-10 min-h-full focus:outline-none focus:ring-0 border-2"
-            />
-            <button
-              className="btn btn-info h-10 p-6"
-              onClick={sendMessage}
-              disabled={loading}
-            >
-              <SendIcon />
-            </button>
+       
+          <div className="bg-base-200 p-4 rounded-lg text-lg text-base-content">
+            I am Mimobot. How can I help you?
           </div>
-
         </div>
+
+        {/* MAPPED MESSAGES */}
+      {/* MAPPED MESSAGES */}
+{messages.map((msg, index) => (
+  <div 
+    key={index} 
+    className={`chat ${msg.role === "user" ? "chat-end" : "chat-start"}`}
+  >
+    {/* 1. Only render the chat-image if the role is 'bot' */}
+    {msg.role === "bot" && (
+      <div className="chat-image avatar">
+        <div className="w-20"> 
+          <img
+            alt="Bot Avatar"
+            src={mimobot} 
+          />
+        </div>
+      </div>
+    )}
+
+  <div
+            className={`p-4 rounded-lg text-lg whitespace-pre-wrap ${
+              msg.role === "user"
+                ? "bg-cyan-600 text-white"
+                : "bg-base-200"
+            }`}
+          >
+            {msg.text}
+          </div>
+
+    
+  </div>
+))}
+        
+        {loading && (
+           <div className="chat chat-start">
+             <div className="chat-bubble bg-transparent italic opacity-50 text-xs">
+                MIMOBOT is typing...
+             </div>
+           </div>
+        )}
+      </div>
+
+      {/* INPUT AREA */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Type to chat"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          className="input input-bordered text-lg w-full focus:outline-none focus:ring-2 focus:ring-info border-2"
+        />
+        <button
+          className="btn btn-info px-6"
+          onClick={sendMessage}
+          disabled={loading}
+        >
+          <SendIcon />
+        </button>
       </div>
     </div>
   );
